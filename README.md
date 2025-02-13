@@ -1,5 +1,3 @@
-# Nginx-ssl
-
 #  Nginx Proxy Configuration with Custom Logging & SSL
 
 ##  Overview  
