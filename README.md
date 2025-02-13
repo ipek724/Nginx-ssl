@@ -11,7 +11,7 @@ This document describes how to install and configure **Nginx** with **Proxy Pass
 - [3️⃣ Enabling Logs](#3️⃣-enabling-logs)
 - [4️⃣ Setting Up SSL (Self-Signed)](#4️⃣-setting-up-ssl-self-signed)
 - [5️⃣ Custom Log Format](#5️⃣-custom-log-format)
-- [6️⃣ Testing the Configuration](#6️⃣-testing-the-configuration)
+
 
 ---
 
@@ -58,7 +58,7 @@ sudo systemctl restart nginx
 ## 3️⃣ Enabling Logs
 Edit the Nginx config file:
 ```bash
-sudo nano /etc/nginx/sites-available/default
+sudo nano /etc/nginx/sites-available/proxy.conf
 ```
 Add the following lines:
 ```nginx
@@ -90,14 +90,26 @@ Add the following:
 ```nginx
 server {
     listen 443 ssl;
-    server_name _;
+    server_name example.com;
 
-    ssl_certificate /etc/ssl/certs/nginx-selfsigned.crt;
-    ssl_certificate_key /etc/ssl/private/nginx-selfsigned.key;
+    ssl_certificate /etc/nginx/ssl/nginx-selfsigned.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx-selfsigned.key;
 
     location / {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://backend-server-ip:port/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
+
+    access_log /var/log/nginx/custom_access.log custom_format;
+    error_log /var/log/nginx/custom_error.log warn;
+}
+
+server {
+    listen 80;
+    server_name example.com;
+    return 301 https://$host$request_uri;
 }
 ```
 Restart Nginx:
@@ -134,30 +146,3 @@ tail -f /var/log/nginx/custom_access.log
 
 ---
 
-## 6️⃣ Testing the Configuration
-### ✅ Start a simple backend server:
-```bash
-python3 -m http.server 8080
-```
-### ✅ Send a test request:
-```bash
-curl http://<server-ip>
-```
-### ✅ Check logs:
-```bash
-tail -f /var/log/nginx/access.log
-```
-
----
-
-## 📌 Conclusion
-- Nginx successfully proxies requests to a backend server.
-- Access and error logs are enabled.
-- Self-signed SSL is configured.
-- Custom log formats are implemented.
-
-This setup ensures a **secure, well-logged, and configurable** Nginx instance.
-
----
-
-### ✨ Author: [Your Name]
